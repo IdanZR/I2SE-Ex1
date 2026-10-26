@@ -3,3 +3,7 @@ __pycache__/
 *.pyc
 .idea/
 .vscode/
+data/*.nrrd
+data/*.nhdr
+data/*.raw
+data/*.raw.gz
