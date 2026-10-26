@@ -1,141 +1,194 @@
-# Ex1 – Experiment and Results
+# 3D Volume Plane Projection – I2SE Ex1
 
-## 1. Objective
+A Python implementation of a 3D medical volume projection algorithm, developed for the Introduction to Software Engineering (OOP/OOD) course.
 
-Implement and evaluate a 3D volume projection algorithm for isosceles triangular and trapezoidal regions.
+The application extracts 2D projections from NRRD volumes using triangular and trapezoidal regions, then combines them into an MP4 video.
 
-The program reads NRRD volume data and CSV plane definitions and generates an MP4 video containing one projection frame per CSV row.
+Both projection algorithms use fully vectorized NumPy operations for efficient computation.
 
-## 2. Datasets
+## Features
 
-### MRI Dataset
+- Read 3D medical imaging volumes in NRRD format.
+- Generate 2D projections of isosceles triangles and trapezoids.
+- Support arbitrary valid orientations in 3D voxel-index space.
+- Perform nearest-neighbor voxel sampling.
+- Assign zero to samples outside the volume.
+- Read projection definitions from CSV.
+- Produce an MP4 video with one frame per CSV row.
+- Validate geometric inputs.
+- Benchmark projection throughput on synthetic 3D data.
 
-- File: `MRHead_1.nrrd`
-- Shape: 256 × 256 × 130
-- Data type: int16
-- Intensity range: 0–279
-- Encoding: gzip
+## Requirements
 
-The MRI was successfully loaded in Python and visualized using 3D Slicer.
+- Python 3
+- NumPy
+- pynrrd
+- Pillow (used by the standalone MRI PNG demonstration)
+- imageio
+- imageio-ffmpeg
 
-### Performance Dataset
+Install the dependencies using:
 
-- Shape: 500 × 500 × 500
-- Data type: uint8
-- Total voxels: 125,000,000
-- All voxel values: 100
+```bash
+python -m pip install -r requirements.txt
+```
 
-This synthetic dataset was used for reproducible timing measurements.
+A virtual environment is recommended.
 
-## 3. Benchmark Methodology
+On Windows:
 
-Each benchmark performed one warm-up projection followed by 20 timed projections.
+```powershell
+py -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+```
 
-Timing used `time.perf_counter()`.
+## Quick Start
 
-The reported FPS represents projection computation throughput and excludes NRRD loading, CSV parsing, video encoding, and display.
+### 1. Obtain the MRI Dataset
 
-$$
-FPS = \frac{1}{\text{Average Runtime in Seconds}}
-$$
+Download the NRRD sample dataset referenced in the assignment.
 
-The triangle and trapezoid benchmarks used different projection geometries, so their FPS values are not a direct comparison of algorithm efficiency under identical workloads.
+The implementation was tested using `MRHead_1.nrrd`, with dimensions `256 × 256 × 130`.
 
-## 4. Triangle Performance
+Place the file at:
 
-| Implementation | Average Time | FPS |
-|---|---:|---:|
-| Original Python loops | 236.14 ms | 4.23 |
-| Vectorized per scanline | 12.23 ms | 81.78 |
-| Fully vectorized NumPy | 6.54 ms | **152.92** |
+```text
+data/MRHead_1.nrrd
+```
 
-The final triangle implementation achieved approximately **36.2×** the throughput of the original version.
+The MRI file is not included in the Git repository.
 
-For the fully vectorized implementation:
+Additional dataset information is available in [DATASET.md](DATASET.md).
 
-- Minimum time: 4.97 ms
-- Maximum time: 10.94 ms
-- Projection dimensions: 150 × 214
+### 2. Prepare the CSV
 
-## 5. Trapezoid Performance
+The repository includes an example file named `planes.csv`.
 
-| Implementation | Average Time | FPS |
-|---|---:|---:|
-| Original Python loops | 285.59 ms | 3.50 |
-| Vectorized per scanline | 9.59 ms | 104.26 |
-| Fully vectorized NumPy | 7.01 ms | **142.59** |
+Its header is:
 
-The final trapezoid implementation achieved approximately **40.7×** the throughput of the original version.
+```csv
+type,ax,ay,az,bx,by,bz,cx,cy,cz,dx,dy,dz
+```
 
-For the fully vectorized implementation:
+A triangle uses three points: `a`, `b`, `c`.
 
-- Minimum time: 5.89 ms
-- Maximum time: 9.74 ms
-- Projection dimensions: 154 × 161
+A trapezoid uses four points in the order `a1`, `a2`, `b`, `c`. In the CSV, these correspond to the `a`, `b`, `c`, `d` fields, respectively.
 
-## 6. Functional Testing
+Example:
 
-The following automated tests were reported as passing:
+```csv
+type,ax,ay,az,bx,by,bz,cx,cy,cz,dx,dy,dz
+triangle,128,70,25,128,170,25,128,70,125,,,
+trapezoid,128,80,40,128,120,40,128,60,100,128,140,100
+```
 
-| Test | Result |
-|---|---|
-| Basic triangle projection | Passed |
-| Triangle coordinate sampling | Passed on the scanline-vectorized implementation |
-| Trapezoid projection | Passed on the scanline-vectorized implementation |
-| Out-of-bounds voxel sampling | Passed |
-| Valid boundary voxel | Passed |
-| Degenerate triangle rejection | Passed |
-| Non-isosceles triangle rejection | Passed |
+All coordinates are expressed in **voxel-index coordinates**, not physical MRI coordinates in millimeters.
 
-The automated tests should be rerun after the final full-vectorization changes to both projection functions.
+Each CSV row generates one projection frame.
 
-## 7. Integration Demonstration
+### 3. Generate the MP4
 
-The application was executed using:
+Run:
 
 ```bash
 python Ex0.py data/MRHead_1.nrrd planes.csv output.mp4
 ```
 
-The CSV contained three entries:
+Or using the Windows virtual environment:
 
-1. Triangle
-2. Trapezoid
-3. Triangle
+```powershell
+.\.venv\Scripts\python.exe Ex0.py .\data\MRHead_1.nrrd planes.csv output.mp4
+```
 
-The program successfully generated `output.mp4`.
+The application reads the volume, computes projections in CSV order, normalizes their intensities for grayscale display, and encodes an MP4.
 
-The video uses a display frame rate of 2 FPS. This value is unrelated to the projection throughput measured in the benchmarks.
+The example video is encoded at 2 FPS for playback. This is separate from the computational performance measurements.
 
-Each CSV row produces one unique output frame.
+## Project Structure
 
-## 8. Limitations
+| File | Description |
+|---|---|
+| `Ex0.py` | Main command-line application and MP4 generation |
+| `projection.py` | Triangle and trapezoid projection algorithms |
+| `planes.csv` | Example input plane definitions |
+| `inspect_nrrd.py` | Inspect NRRD volume data and metadata |
+| `demo_mri.py` | Create a standalone PNG demonstration |
+| `benchmark.py` | Triangle performance benchmark |
+| `benchmark_trapezoid.py` | Trapezoid performance benchmark |
+| `test_projection.py` | Basic triangle tests |
+| `test_coordinates.py` | Coordinate-based sampling test |
+| `test_trapezoid.py` | Basic trapezoid tests |
+| `test_edge_cases.py` | Boundary and invalid triangle tests |
+| `requirements.txt` | Python dependencies |
 
-- Nearest-neighbor sampling may produce repeated voxel values and visible aliasing.
-- The benchmarks cover specific plane geometries rather than every possible input.
-- Additional geometric and malformed-input tests would improve robustness.
-- Python and library versions, CPU specifications, and operating-system details should be recorded for reproducibility.
-- MP4 generation time was not included in the FPS measurements.
+## Algorithm
 
-## 9. Conclusion
+The algorithm uses a scanline-based method:
 
-NumPy vectorization substantially improved the performance of both projection algorithms.
+1. Validate the input shape and its geometry.
+2. Interpolate the endpoints of the scanlines along the region's sides.
+3. Calculate sampling positions across each scanline.
+4. Retrieve voxel intensities using nearest-neighbor sampling.
+5. Center the sampled values in a rectangular 2D output matrix.
 
-The final measured results were:
+The triangle and trapezoid implementations use full NumPy vectorization to process all active sampling points without nested Python sampling loops.
 
-- **Triangle: 152.92 FPS**
-- **Trapezoid: 142.59 FPS**
+For mathematical derivations, implementation decisions, complexity analysis and limitations, see [ALGORITHM.md](ALGORITHM.md).
 
-Both exceeded the assignment's minimum 30 FPS requirement and the approximate 100 FPS performance target in their respective benchmark scenarios.
+## Testing
 
-The results demonstrate that batch-oriented NumPy operations can significantly reduce Python-loop overhead while preserving the intended projection design.
+Run the functional tests:
 
-## 10. Final Verification
+```bash
+python test_projection.py
+python test_coordinates.py
+python test_trapezoid.py
+python test_edge_cases.py
+```
 
-Before submission:
+The tests verify basic output geometry, selected voxel values, boundary behavior, and invalid triangle inputs.
 
-- Rerun all automated tests.
-- Regenerate and inspect the MP4 using the final code.
-- Confirm the README and algorithm documentation match the implementation.
-- Record the benchmark environment.
-- Commit the final source files and documentation.
+For the detailed testing plan, see [TESTING.md](TESTING.md).
+
+## Performance
+
+Benchmarks were performed using a synthetic `500 × 500 × 500` uint8 volume, with one warm-up projection and 20 timed projections per test.
+
+| Algorithm | Original Python | Fully Vectorized NumPy |
+|---|---:|---:|
+| Triangle | 4.23 FPS | **152.92 FPS** |
+| Trapezoid | 3.50 FPS | **142.59 FPS** |
+
+Both final implementations exceeded 100 FPS in the measured benchmark scenarios.
+
+The performance figures measure projection computation only, excluding file loading and MP4 encoding. The triangle and trapezoid tests used different projection geometries.
+
+Reproduce the benchmarks using:
+
+```bash
+python benchmark.py
+python benchmark_trapezoid.py
+```
+
+For full experimental results, see [RESULTS.md](RESULTS.md).
+
+## Documentation
+
+- [SRS.md](SRS.md) – Software requirements specification
+- [ALGORITHM.md](ALGORITHM.md) – Mathematical and implementation design
+- [DATASET.md](DATASET.md) – MRI and synthetic datasets
+- [TESTING.md](TESTING.md) – Testing strategy
+- [RESULTS.md](RESULTS.md) – Benchmarks and experiment results
+
+## Known Limitations
+
+- Nearest-neighbor sampling may introduce aliasing and repeated voxel values.
+- Plane coordinates must be provided in voxel-index space.
+- The current trapezoid validation excludes parallelograms.
+- Very large projections may require substantial temporary memory because of full vectorization.
+- Benchmarked throughput depends on hardware and the selected plane geometry.
+- The CSV format is a project-defined convention and is not automatically compatible with other formats.
+
+## Summary
+
+This project demonstrates the complete workflow of loading a medical volume, computing geometric 2D projections, validating results, optimizing performance through NumPy vectorization, and exporting the resulting frames to MP4.
