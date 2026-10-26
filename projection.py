@@ -105,12 +105,14 @@ def project_triangle(volume, a, b, c):
     return E
 
 
+
 def project_trapezoid(volume, a1, a2, b, c):
-    """Project an isosceles trapezoid from a 3D volume."""
+    """Project an isosceles trapezoid using NumPy vectorization."""
 
     if volume.ndim != 3:
         raise ValueError("Volume must be 3-dimensional")
 
+    # Convert vertices to NumPy arrays.
     a1, a2, b, c = [
         np.asarray(p, dtype=float)
         for p in (a1, a2, b, c)
@@ -118,81 +120,122 @@ def project_trapezoid(volume, a1, a2, b, c):
 
     points = (a1, a2, b, c)
 
-    if any(p.shape != (3,) or not np.all(np.isfinite(p))
-           for p in points):
+    if any(
+        p.shape != (3,) or not np.all(np.isfinite(p))
+        for p in points
+    ):
         raise ValueError("Vertices must be finite 3D points")
 
-    # The two legs.
+    # Calculate the two legs.
     left_leg = b - a1
     right_leg = c - a2
 
     left_length = np.linalg.norm(left_leg)
     right_length = np.linalg.norm(right_leg)
 
-    # The two parallel bases.
+    # Calculate the two bases.
     top = a2 - a1
     bottom = c - b
 
     top_length = np.linalg.norm(top)
     bottom_length = np.linalg.norm(bottom)
 
-    if min(left_length, right_length,
-           top_length, bottom_length) <= 0:
+    # Validate geometry.
+    if min(
+        left_length,
+        right_length,
+        top_length,
+        bottom_length
+    ) <= 0:
         raise ValueError("Degenerate trapezoid")
 
     if not np.isclose(left_length, right_length, rtol=1e-6):
         raise ValueError("Trapezoid legs must have equal length")
 
-    # Both bases must be parallel and point in the same direction.
-    if np.linalg.norm(np.cross(top, bottom)) > (
-        1e-6 * top_length * bottom_length
-    ) or np.dot(top, bottom) <= 0:
+    # Bases must be parallel and point in the same direction.
+    if (
+        np.linalg.norm(np.cross(top, bottom))
+        > 1e-6 * top_length * bottom_length
+        or np.dot(top, bottom) <= 0
+    ):
         raise ValueError("Trapezoid bases must be parallel")
 
-    # All four points must lie on the same plane.
+    # Validate that the trapezoid has nonzero area.
     normal = np.cross(top, left_leg)
-    if np.linalg.norm(normal) <= 1e-10 * top_length * left_length:
+    normal_length = np.linalg.norm(normal)
+
+    if normal_length <= 1e-10 * top_length * left_length:
         raise ValueError("Degenerate trapezoid area")
 
+    # All vertices must lie on the same plane.
     if abs(np.dot(c - a1, normal)) > (
-        1e-6 * np.linalg.norm(normal)
+        1e-6
+        * normal_length
         * max(top_length, bottom_length, left_length)
     ):
         raise ValueError("Trapezoid vertices must be coplanar")
 
-    # Reject parallelograms for this isosceles trapezoid design.
+    # Reject equal-length bases in our current design.
     if np.isclose(top_length, bottom_length, rtol=1e-6):
         raise ValueError("Trapezoid bases must have different lengths")
 
+    # Calculate output dimensions.
     N = int(np.ceil(left_length))
 
-    # Include both the initial and final base.
     H = N + 1
     W = int(np.ceil(max(top_length, bottom_length))) + 1
 
     E = np.zeros((H, W), dtype=volume.dtype)
 
+    # Volume boundaries.
+    bounds = np.asarray(volume.shape) - 1
+
+    # Process each scanline.
     for y in range(H):
+
         ty = y / N
 
-        # Endpoints of the current scanline.
+        # Calculate scanline endpoints.
         p1 = a1 + ty * left_leg
         p2 = a2 + ty * right_leg
 
+        # Calculate scanline length.
         d12 = np.linalg.norm(p2 - p1)
         K = max(1, int(np.ceil(d12)))
 
-        # Center this scanline.
+        # Center the scanline.
         start = (W - (K + 1)) // 2
 
-        for j in range(K + 1):
-            tx = j / K
+        # Generate all sampling points simultaneously.
+        tx = np.arange(K + 1) / K
+        sample_points = p1 + tx[:, None] * (p2 - p1)
 
-            p = p1 + tx * (p2 - p1)
+        # Check which points are inside the volume.
+        valid = np.all(
+            (sample_points >= 0)
+            & (sample_points <= bounds),
+            axis=1
+        )
 
-            value = sample_volume(volume, p)
+        # Keep only valid sampling points.
+        valid_points = sample_points[valid]
 
-            x = start + j
-            E[y, x] = value
+        # Convert continuous coordinates to voxel indices.
+        indices = np.floor(
+            valid_points + 0.5
+        ).astype(np.intp)
+
+        # Read all voxel values in one NumPy operation.
+        values = volume[
+            indices[:, 0],
+            indices[:, 1],
+            indices[:, 2]
+        ]
+
+        # Calculate corresponding output columns.
+        columns = start + np.flatnonzero(valid)
+
+        # Write values into the output image.
+        E[y, columns] = values
 
     return E
