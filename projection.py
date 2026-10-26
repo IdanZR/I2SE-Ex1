@@ -1,6 +1,6 @@
 
 import numpy as np
-
+GEOMETRY_EPS = 0.001
 
 def sample_volume(volume, point):
     """Sample a 3D volume using nearest-neighbor sampling."""
@@ -51,7 +51,7 @@ def project_triangle(volume, a, b, c):
     if min(Dab, Dac, Dbc) <= 0:
         raise ValueError("Degenerate triangle")
 
-    if not np.isclose(Dab, Dac, rtol=1e-6):
+    if abs(Dab - Dac) >= GEOMETRY_EPS:
         raise ValueError("Triangle must be isosceles")
 
     if np.linalg.norm(np.cross(ab, ac)) <= 1e-10 * Dab * Dac:
@@ -176,7 +176,7 @@ def project_trapezoid(volume, a1, a2, b, c):
     ) <= 0:
         raise ValueError("Degenerate trapezoid")
 
-    if not np.isclose(left_length, right_length, rtol=1e-6):
+    if abs(left_length - right_length) >= GEOMETRY_EPS:
         raise ValueError("Trapezoid legs must have equal length")
 
     # Bases must be parallel and point in the same direction.
@@ -202,9 +202,12 @@ def project_trapezoid(volume, a1, a2, b, c):
     ):
         raise ValueError("Trapezoid vertices must be coplanar")
 
-    # Reject equal-length bases in our current design.
-    if np.isclose(top_length, bottom_length, rtol=1e-6):
-        raise ValueError("Trapezoid bases must have different lengths")
+     # The first base must not be longer than the second base.
+    # Equal-length bases are allowed by the assignment.
+    if top_length > bottom_length:
+        raise ValueError(
+            "First trapezoid base must not exceed second base"
+        )
 
     # Calculate output dimensions.
     N = int(np.ceil(left_length))
