@@ -7,3 +7,7 @@ data/*.nrrd
 data/*.nhdr
 data/*.raw
 data/*.raw.gz
+
+# Generated images and videos
+*.mp4
+mri_projection.png
