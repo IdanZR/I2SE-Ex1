@@ -1,4 +1,4 @@
-# 3D Volume Plane Projection – I2SE Ex1
+﻿# 3D Volume Plane Projection – I2SE Ex1
 
 A Python implementation of a 3D medical volume projection algorithm, developed for the Introduction to Software Engineering (OOP/OOD) course.
 
@@ -58,7 +58,7 @@ data/MRHead_1.nrrd
 
 The MRI file is not included in the Git repository.
 
-Additional dataset information is available in [DATASET.md](DATASET.md).
+Additional dataset information is available in [DATASET.md](docs/DATASET.md).
 
 ### 2. Prepare the CSV
 
@@ -106,20 +106,27 @@ The example video is encoded at 2 FPS for playback. This is separate from the co
 
 ## Project Structure
 
+
 | File | Description |
 |---|---|
-| `Ex0.py` | Main command-line application and MP4 generation |
+| `Ex0.py` | Main application and MP4 generation |
 | `projection.py` | Triangle and trapezoid projection algorithms |
-| `planes.csv` | Example input plane definitions |
-| `inspect_nrrd.py` | Inspect NRRD volume data and metadata |
-| `demo_mri.py` | Create a standalone PNG demonstration |
-| `benchmark.py` | Triangle performance benchmark |
-| `benchmark_trapezoid.py` | Trapezoid performance benchmark |
-| `test_projection.py` | Basic triangle tests |
-| `test_coordinates.py` | Coordinate-based sampling test |
-| `test_trapezoid.py` | Basic trapezoid tests |
-| `test_edge_cases.py` | Boundary and invalid triangle tests |
+| `planes.csv` | Example plane definitions |
 | `requirements.txt` | Python dependencies |
+| `docs/SRS.md` | Software requirements specification |
+| `docs/ALGORITHM.md` | Mathematical and algorithm documentation |
+| `docs/DATASET.md` | Dataset documentation |
+| `docs/TESTING.md` | Testing strategy |
+| `docs/RESULTS.md` | Benchmark results and experiments |
+| `tests/test_projection.py` | Basic triangle tests |
+| `tests/test_coordinates.py` | Coordinate sampling tests |
+| `tests/test_trapezoid.py` | Trapezoid tests |
+| `tests/test_edge_cases.py` | Boundary and invalid-input tests |
+| `scripts/benchmark.py` | Triangle performance benchmark |
+| `scripts/benchmark_trapezoid.py` | Trapezoid performance benchmark |
+| `scripts/demo_mri.py` | MRI image demonstration |
+| `scripts/inspect_nrrd.py` | NRRD metadata inspection |
+
 
 ## Algorithm
 
@@ -133,22 +140,22 @@ The algorithm uses a scanline-based method:
 
 The triangle and trapezoid implementations use full NumPy vectorization to process all active sampling points without nested Python sampling loops.
 
-For mathematical derivations, implementation decisions, complexity analysis and limitations, see [ALGORITHM.md](ALGORITHM.md).
+For mathematical derivations, implementation decisions, complexity analysis and limitations, see [ALGORITHM.md](docs/ALGORITHM.md).
 
 ## Testing
 
 Run the functional tests:
 
 ```bash
-python test_projection.py
-python test_coordinates.py
-python test_trapezoid.py
-python test_edge_cases.py
+python -m tests.test_projection.py
+python -m tests.test_coordinates.py
+python -m tests.test_trapezoid.py
+python -m tests.test_edge_cases.py
 ```
 
 The tests verify basic output geometry, selected voxel values, boundary behavior, and invalid triangle inputs.
 
-For the detailed testing plan, see [TESTING.md](TESTING.md).
+For the detailed testing plan, see [TESTING.md](docs/TESTING.md).
 
 ## Performance
 
@@ -166,19 +173,19 @@ The performance figures measure projection computation only, excluding file load
 Reproduce the benchmarks using:
 
 ```bash
-python benchmark.py
-python benchmark_trapezoid.py
+python -m scripts.benchmark
+python -m scripts.benchmark_trapezoid
 ```
 
-For full experimental results, see [RESULTS.md](RESULTS.md).
+For full experimental results, see [RESULTS.md](docs/RESULTS.md).
 
 ## Documentation
 
-- [SRS.md](SRS.md) – Software requirements specification
-- [ALGORITHM.md](ALGORITHM.md) – Mathematical and implementation design
-- [DATASET.md](DATASET.md) – MRI and synthetic datasets
-- [TESTING.md](TESTING.md) – Testing strategy
-- [RESULTS.md](RESULTS.md) – Benchmarks and experiment results
+- [SRS.md](docs/SRS.md) – Software requirements specification
+- [ALGORITHM.md](docs/ALGORITHM.md) – Mathematical and implementation design
+- [DATASET.md](docs/DATASET.md) – MRI and synthetic datasets
+- [TESTING.md](docs/TESTING.md) – Testing strategy
+- [RESULTS.md](docs/RESULTS.md) – Benchmarks and experiment results
 
 ## Known Limitations
 
