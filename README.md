@@ -104,6 +104,18 @@ The application reads the volume, computes projections in CSV order, normalizes 
 
 The example video is encoded at 2 FPS for playback. This is separate from the computational performance measurements.
 
+## Demo Video
+
+The following video demonstrates the projection algorithm
+using the MRHead MRI dataset.
+
+The video contains three projections:
+1. Triangle
+2. Trapezoid
+3. Triangle
+
+[Watch the demonstration](results/demo.mp4)
+
 ## Project Structure
 
 
