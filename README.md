@@ -1,4 +1,4 @@
-﻿# I2SE Ex1 - 3D volume plane projection
+﻿# I2SE Ex1 - 3D volume plane projection.
 
 Extract isosceles triangle and trapezoid slices from a 3D NRRD volume and
 encode one MP4 frame per CSV record, in order. The implementation uses the
